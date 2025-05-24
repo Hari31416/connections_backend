@@ -6,6 +6,8 @@ const connectionSchema = new mongoose.Schema(
     name: { type: String, required: true },
     email: String,
     phone: String,
+    linkedinUserId: String,
+    githubUserId: String,
     notes: String,
   },
   { timestamps: true }

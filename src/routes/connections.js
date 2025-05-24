@@ -46,13 +46,16 @@ router.get("/:id", auth, async (req, res) => {
 // Create a new connection
 router.post("/", auth, async (req, res) => {
   try {
-    const { name, email, phone, notes } = req.body;
+    const { name, email, phone, linkedinUserId, githubUserId, notes } =
+      req.body;
 
     const connection = await Connection.create({
       userId: req.user.userId,
       name,
       email,
       phone,
+      linkedinUserId,
+      githubUserId,
       notes,
     });
 
@@ -65,7 +68,8 @@ router.post("/", auth, async (req, res) => {
 // Update connection by ID
 router.put("/:id", auth, async (req, res) => {
   try {
-    const { name, email, phone, notes } = req.body;
+    const { name, email, phone, linkedinUserId, githubUserId, notes } =
+      req.body;
 
     // Get existing connection
     const existingConnection = await Connection.findOne({
@@ -80,7 +84,7 @@ router.put("/:id", auth, async (req, res) => {
     // Update the connection
     const connection = await Connection.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.userId },
-      { name, email, phone, notes },
+      { name, email, phone, linkedinUserId, githubUserId, notes },
       { new: true }
     );
 
