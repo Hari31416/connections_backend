@@ -9,6 +9,17 @@ const router = express.Router();
 router.get("/", auth, async (req, res) => {
   try {
     const companies = await Company.find({ userId: req.user.userId });
+
+    // Check if companies have the connections array
+    if (companies.length > 0) {
+      // Make sure connections array is initialized for each company
+      companies.forEach((company) => {
+        if (!company.connections) {
+          company.connections = [];
+        }
+      });
+    }
+
     res.json(companies);
   } catch (error) {
     res.status(500).json({ error: error.message });
