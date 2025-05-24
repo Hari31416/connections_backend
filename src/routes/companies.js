@@ -1,11 +1,12 @@
-const express = require('express');
-const Company = require('../models/Company');
-const auth = require('../middleware/auth');
+const express = require("express");
+const Company = require("../models/Company");
+const Connection = require("../models/Connection");
+const auth = require("../middleware/auth");
 
 const router = express.Router();
 
 // Get all companies for authenticated user
-router.get('/', auth, async (req, res) => {
+router.get("/", auth, async (req, res) => {
   try {
     const companies = await Company.find({ userId: req.user.userId });
     res.json(companies);
@@ -14,16 +15,54 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// Create a new company
-router.post('/', auth, async (req, res) => {
+// Get company by ID with connections
+router.get("/:id", auth, async (req, res) => {
   try {
-    const { name, industry, website } = req.body;
-    const company = await Company.create({ 
-      userId: req.user.userId, 
-      name, 
-      industry, 
-      website 
+    const company = await Company.findOne({
+      _id: req.params.id,
+      userId: req.user.userId,
     });
+
+    if (!company) {
+      return res.status(404).json({ error: "Company not found" });
+    }
+
+    res.json(company);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create a new company
+router.post("/", auth, async (req, res) => {
+  try {
+    const { name, industry, website, connections = [] } = req.body;
+    const company = await Company.create({
+      userId: req.user.userId,
+      name,
+      industry,
+      website,
+      connections,
+    });
+
+    // If connections are provided, update the connections too
+    if (connections && connections.length > 0) {
+      for (const conn of connections) {
+        await Connection.findOneAndUpdate(
+          { _id: conn.connectionId, userId: req.user.userId },
+          {
+            $push: {
+              companies: {
+                companyId: company._id,
+                companyName: company.name,
+                position: conn.position,
+              },
+            },
+          }
+        );
+      }
+    }
+
     res.json(company);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -31,19 +70,80 @@ router.post('/', auth, async (req, res) => {
 });
 
 // Update company by ID
-router.put('/:id', auth, async (req, res) => {
+router.put("/:id", auth, async (req, res) => {
   try {
-    const { name, industry, website } = req.body;
+    const { name, industry, website, connections = [] } = req.body;
+
+    // Get existing company to track changes
+    const existingCompany = await Company.findOne({
+      _id: req.params.id,
+      userId: req.user.userId,
+    });
+
+    if (!existingCompany) {
+      return res.status(404).json({ error: "Company not found" });
+    }
+
+    // Update the company
     const company = await Company.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.userId },
-      { name, industry, website },
+      { name, industry, website, connections },
       { new: true }
     );
-    
-    if (!company) {
-      return res.status(404).json({ error: 'Company not found' });
+
+    // If name changed, update all connections that reference this company
+    if (name !== existingCompany.name) {
+      await Connection.updateMany(
+        { userId: req.user.userId, "companies.companyId": company._id },
+        { $set: { "companies.$.companyName": name } }
+      );
     }
-    
+
+    // Handle connections updates - more complex logic would be needed for a complete solution
+    // This is a simplified approach
+    if (connections && connections.length > 0) {
+      // Update or add connections
+      for (const conn of connections) {
+        // Check if connection exists and has this company
+        const connection = await Connection.findOne({
+          _id: conn.connectionId,
+          userId: req.user.userId,
+          "companies.companyId": company._id,
+        });
+
+        if (connection) {
+          // Update existing connection
+          await Connection.updateOne(
+            {
+              _id: conn.connectionId,
+              userId: req.user.userId,
+              "companies.companyId": company._id,
+            },
+            {
+              $set: {
+                "companies.$.position": conn.position,
+                "companies.$.companyName": name,
+              },
+            }
+          );
+        } else {
+          // Add company to connection
+          await Connection.findOneAndUpdate(
+            { _id: conn.connectionId, userId: req.user.userId },
+            {
+              $push: {
+                companies: {
+                  companyId: company._id,
+                  companyName: name,
+                  position: conn.position,
+                },
+              },
+            }
+          );
+        }
+      }
+    }
+
     res.json(company);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -51,17 +151,23 @@ router.put('/:id', auth, async (req, res) => {
 });
 
 // Delete company by ID
-router.delete('/:id', auth, async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
   try {
-    const company = await Company.findOneAndDelete({ 
-      _id: req.params.id, 
-      userId: req.user.userId 
+    const company = await Company.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user.userId,
     });
-    
+
     if (!company) {
-      return res.status(404).json({ error: 'Company not found' });
+      return res.status(404).json({ error: "Company not found" });
     }
-    
+
+    // Remove this company from all connections
+    await Connection.updateMany(
+      { userId: req.user.userId },
+      { $pull: { companies: { companyId: company._id } } }
+    );
+
     res.json({ success: true });
   } catch (error) {
     res.status(400).json({ error: error.message });
