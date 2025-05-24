@@ -1,14 +1,15 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
 
 // Import database connection
-const connectDB = require('./config/db');
+const connectDB = require("./config/db");
 
 // Import routes
-const authRoutes = require('./routes/auth');
-const companyRoutes = require('./routes/companies');
-const connectionRoutes = require('./routes/connections');
+const authRoutes = require("./routes/auth");
+const companyRoutes = require("./routes/companies");
+const connectionRoutes = require("./routes/connections");
+const positionRoutes = require("./routes/positions");
 
 // Initialize Express app
 const app = express();
@@ -21,16 +22,17 @@ app.use(express.json());
 connectDB();
 
 // Routes
-app.use('/api', authRoutes);
-app.use('/api/companies', companyRoutes);
-app.use('/api/connections', connectionRoutes);
+app.use("/api", authRoutes);
+app.use("/api/companies", companyRoutes);
+app.use("/api/connections", connectionRoutes);
+app.use("/api/positions", positionRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ error: 'Server error' });
+  res.status(500).json({ error: "Server error" });
 });
 
 // Start server
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log('Backend running on port', PORT));
+app.listen(PORT, () => console.log("Backend running on port", PORT));
