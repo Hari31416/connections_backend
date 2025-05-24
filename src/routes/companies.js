@@ -115,6 +115,12 @@ router.put("/:id", auth, async (req, res) => {
     if (connections && connections.length > 0) {
       // Update or add connections
       for (const conn of connections) {
+        // Get connection details to get the name if needed
+        const connectionDetails = await Connection.findOne({
+          _id: conn.connectionId,
+          userId: req.user.userId,
+        });
+
         // Check if connection exists and has this company
         const connection = await Connection.findOne({
           _id: conn.connectionId,
@@ -137,6 +143,16 @@ router.put("/:id", auth, async (req, res) => {
               },
             }
           );
+
+          // Update company connection position
+          await Company.updateOne(
+            { _id: company._id, "connections.connectionId": conn.connectionId },
+            {
+              $set: {
+                "connections.$.position": conn.position,
+              },
+            }
+          );
         } else {
           // Add company to connection
           await Connection.findOneAndUpdate(
@@ -151,6 +167,25 @@ router.put("/:id", auth, async (req, res) => {
               },
             }
           );
+
+          // Add connection to company
+          const connectionEntry = {
+            connectionId: conn.connectionId,
+            connectionName: connectionDetails ? connectionDetails.name : "",
+            position: conn.position,
+          };
+
+          // If the connection isn't in the connections array, add it
+          const connectionExists = company.connections.some(
+            (c) => c.connectionId.toString() === conn.connectionId.toString()
+          );
+
+          if (!connectionExists) {
+            await Company.findOneAndUpdate(
+              { _id: company._id, userId: req.user.userId },
+              { $push: { connections: connectionEntry } }
+            );
+          }
         }
       }
     }
