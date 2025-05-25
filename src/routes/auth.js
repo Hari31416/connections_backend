@@ -13,10 +13,17 @@ router.post("/register", async (req, res) => {
   try {
     const hashed = await bcrypt.hash(password, 10);
     const user = await User.create({ email, password: hashed });
+
+    // Generate JWT token for immediate login after registration
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET || "secret"
+    );
+
     console.log(
       `[AUTH] User registered successfully: ${email} (ID: ${user._id})`
     );
-    res.json({ success: true });
+    res.json({ token });
   } catch (e) {
     console.error(
       `[AUTH] [ERROR] Registration failed for ${email}: ${e.message}`
