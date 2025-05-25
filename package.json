@@ -1,4 +1,13 @@
 {
+  "name": "connections_backend",
+  "version": "1.0.0",
+  "description": "Connections Tracker Backend API",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
@@ -6,5 +15,17 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.0"
-  }
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "express",
+    "mongodb",
+    "api",
+    "connections",
+    "tracker"
+  ],
+  "author": "Harikesh Kushwaha",
+  "license": "MIT"
 }
