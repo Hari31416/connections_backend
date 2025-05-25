@@ -6,6 +6,78 @@ const auth = require("../middleware/auth");
 
 const router = express.Router();
 
+// Check if any users exist (for cold start)
+router.get("/users/exists", async (req, res) => {
+  try {
+    const userCount = await User.countDocuments();
+    console.log(`[AUTH] User count check: ${userCount} users found`);
+    res.json({ hasUsers: userCount > 0 });
+  } catch (error) {
+    console.error(
+      `[AUTH] [ERROR] Failed to check user count: ${error.message}`
+    );
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Create first admin user (only when no users exist)
+router.post("/initialize", async (req, res) => {
+  const { email, password } = req.body;
+  console.log(`[AUTH] First user initialization attempt for email: ${email}`);
+
+  try {
+    // Check if any users already exist
+    const userCount = await User.countDocuments();
+    if (userCount > 0) {
+      console.log(
+        `[AUTH] Initialization denied - users already exist (${userCount})`
+      );
+      return res.status(403).json({
+        error: "System already initialized. Users exist in the database.",
+      });
+    }
+
+    // Check if email is provided
+    if (!email || !password) {
+      return res.status(400).json({
+        error: "Email and password are required.",
+      });
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      email,
+      password: hashed,
+      isAdmin: true, // First user is always admin
+    });
+
+    // Generate JWT token for immediate login
+    const token = jwt.sign(
+      { userId: user._id, email: user.email, isAdmin: user.isAdmin },
+      process.env.JWT_SECRET || "secret"
+    );
+
+    console.log(
+      `[AUTH] First admin user created successfully: ${email} (ID: ${user._id})`
+    );
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        isAdmin: user.isAdmin,
+      },
+    });
+  } catch (e) {
+    console.error(
+      `[AUTH] [ERROR] First user initialization failed for ${email}: ${e.message}`
+    );
+    res.status(500).json({
+      error: "Server error occurred during initialization",
+    });
+  }
+});
+
 // Register new user (admin only)
 router.post("/register", auth, async (req, res) => {
   const { email, password } = req.body;
