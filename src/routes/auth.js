@@ -11,6 +11,18 @@ router.post("/register", async (req, res) => {
   console.log(`[AUTH] Registration attempt for email: ${email}`);
 
   try {
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      console.log(
+        `[AUTH] Registration failed - email already exists: ${email}`
+      );
+      return res.status(400).json({
+        error:
+          "Email already registered. Please use a different email or try logging in.",
+      });
+    }
+
     const hashed = await bcrypt.hash(password, 10);
     const user = await User.create({ email, password: hashed });
 
@@ -28,7 +40,9 @@ router.post("/register", async (req, res) => {
     console.error(
       `[AUTH] [ERROR] Registration failed for ${email}: ${e.message}`
     );
-    res.status(400).json({ error: "User exists" });
+    res.status(500).json({
+      error: "Server error occurred during registration",
+    });
   }
 });
 
