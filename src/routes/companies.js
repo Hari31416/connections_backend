@@ -173,6 +173,39 @@ router.delete("/:id", auth, async (req, res) => {
   }
 });
 
+// Search companies
+router.get("/search/:query", auth, async (req, res) => {
+  const searchQuery = req.params.query;
+  console.log(
+    `[COMPANIES] Searching companies for "${searchQuery}" by user: ${req.user.userId}`
+  );
+
+  try {
+    // Create case-insensitive regex pattern
+    const searchRegex = new RegExp(searchQuery, "i");
+
+    // Search across multiple fields
+    const companies = await Company.find({
+      userId: req.user.userId,
+      $or: [
+        { name: { $regex: searchRegex } },
+        { industry: { $regex: searchRegex } },
+        { website: { $regex: searchRegex } },
+      ],
+    });
+
+    console.log(
+      `[COMPANIES] Found ${companies.length} companies matching "${searchQuery}" for user: ${req.user.userId}`
+    );
+    res.json(companies);
+  } catch (error) {
+    console.error(
+      `[COMPANIES] [ERROR] Failed to search companies for "${searchQuery}" by user ${req.user.userId}: ${error.message}`
+    );
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get companies with positions for a specific connection
 router.get("/byconnection/:connectionId", auth, async (req, res) => {
   const connectionId = req.params.connectionId;

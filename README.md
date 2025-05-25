@@ -141,6 +141,14 @@ A robust Node.js/Express REST API for managing professional and personal connect
 - **GET** `/api/connections/bycompany/:companyId`
 - **Headers**: `Authorization: Bearer <jwt_token>`
 
+#### Search Connections
+
+- **GET** `/api/connections/search/:query`
+- **Headers**: `Authorization: Bearer <jwt_token>`
+- **Description**: Search connections across name, email, phone, LinkedIn/GitHub usernames
+- **Example**: `/api/connections/search/john` - finds all connections matching "john"
+- **Note**: Search is case-insensitive and supports partial matches
+
 ### Companies Endpoints
 
 #### Get All Companies
@@ -183,6 +191,14 @@ A robust Node.js/Express REST API for managing professional and personal connect
 
 - **GET** `/api/companies/byconnection/:connectionId`
 - **Headers**: `Authorization: Bearer <jwt_token>`
+
+#### Search Companies
+
+- **GET** `/api/companies/search/:query`
+- **Headers**: `Authorization: Bearer <jwt_token>`
+- **Description**: Search companies across name, industry, and website fields
+- **Example**: `/api/companies/search/tech` - finds all companies matching "tech"
+- **Note**: Search is case-insensitive and supports partial matches
 
 ### Positions Endpoints
 
