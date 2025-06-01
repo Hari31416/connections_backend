@@ -2,6 +2,17 @@
 
 A robust Node.js/Express REST API for managing professional and personal connections, companies, and employment positions. Features JWT authentication, MongoDB integration, and comprehensive logging.
 
+## ⚠️ Experimental Project Disclaimer
+
+**This is an experimental project** - the result of an experiment to understand whether "vibe coding" can be used to generate end-to-end web applications.
+
+**Important Notes:**
+
+- The bulk of this code is AI-generated
+- This code is **NOT optimized for production use**
+- This project serves as a proof-of-concept and learning exercise
+- Use at your own risk and review thoroughly before any production deployment
+
 ## 🚀 Technology Stack
 
 - **Runtime**: Node.js
